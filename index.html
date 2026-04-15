@@ -3,171 +3,252 @@
 <head>
 <meta charset="UTF-8">
 <title>World Clock 🌍</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
+:root {
+  --bg: #0f2027;
+  --text: white;
+}
+
+.light {
+  --bg: #f5f5f5;
+  --text: #111;
 }
 
 body {
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-  color: white;
-  min-height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  padding: 15px;
+  backdrop-filter: blur(10px);
+}
+
+.controls {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 30px;
+  gap: 10px;
 }
 
-/* Title */
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-}
-
-/* Search bar */
-.search {
-  margin-bottom: 20px;
-}
-
-.search input {
-  padding: 10px 15px;
+input {
+  flex: 1;
+  padding: 12px;
   border-radius: 25px;
   border: none;
-  outline: none;
-  width: 250px;
-  font-size: 14px;
 }
 
 /* Grid */
 .container {
+  padding: 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  width: 100%;
-  max-width: 1000px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
 }
 
 /* Card */
 .clock {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 20px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  border-radius: 18px;
+  padding: 18px;
   transition: 0.3s;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.clock:hover {
-  transform: translateY(-5px) scale(1.03);
-}
+/* Day/Night */
+.day-bg { background: linear-gradient(135deg, #2193b0, #6dd5ed); }
+.night-bg { background: linear-gradient(135deg, #141e30, #243b55); }
 
-/* City */
-.city {
+.city { font-size: 16px; font-weight: 600; }
+.time { font-size: 28px; font-weight: 700; }
+.date { font-size: 13px; opacity: 0.85; }
+.utc { font-size: 12px; opacity: 0.7; }
+
+/* Top indicator */
+.indicator {
+  position: absolute;
+  right: 15px;
+  top: 15px;
   font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 8px;
 }
 
-/* Time */
-.time {
-  font-size: 24px;
-  font-weight: 700;
+/* Bottom bar */
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
 }
 
-/* Date */
-.date {
-  font-size: 13px;
-  opacity: 0.7;
+/* Favorite button */
+.fav-btn {
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
 }
 
+.fav-on {
+  background: gold;
+  color: black;
+}
+
+.fav-off {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+/* Pulse */
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: lime;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 5px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
 </style>
 </head>
 
 <body>
 
-<h1>🌍 World Clock</h1>
+<header>
+  <h2>🌍 World Clock</h2>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search country...">
+    <button onclick="toggleTheme()">🌙</button>
+  </div>
+</header>
 
-<div class="search">
-  <input type="text" id="searchInput" placeholder="Search country or city...">
-</div>
-
-<div class="container" id="clockContainer"></div>
+<div class="container" id="container"></div>
 
 <script>
-const cities = [
+const countries = [
   { name: "India 🇮🇳", zone: "Asia/Kolkata" },
-  { name: "New York 🇺🇸", zone: "America/New_York" },
-  { name: "London 🇬🇧", zone: "Europe/London" },
-  { name: "Tokyo 🇯🇵", zone: "Asia/Tokyo" },
-  { name: "Sydney 🇦🇺", zone: "Australia/Sydney" },
-  { name: "Dubai 🇦🇪", zone: "Asia/Dubai" },
-  { name: "Paris 🇫🇷", zone: "Europe/Paris" },
-  { name: "Singapore 🇸🇬", zone: "Asia/Singapore" },
-  { name: "Toronto 🇨🇦", zone: "America/Toronto" },
-  { name: "Berlin 🇩🇪", zone: "Europe/Berlin" }
+  { name: "Japan 🇯🇵", zone: "Asia/Tokyo" },
+  { name: "China 🇨🇳", zone: "Asia/Shanghai" },
+  { name: "UAE 🇦🇪", zone: "Asia/Dubai" },
+  { name: "France 🇫🇷", zone: "Europe/Paris" },
+  { name: "UK 🇬🇧", zone: "Europe/London" },
+  { name: "USA 🇺🇸", zone: "America/New_York" },
+  { name: "Canada 🇨🇦", zone: "America/Toronto" },
+  { name: "Australia 🇦🇺", zone: "Australia/Sydney" },
+  { name: "New Zealand 🇳🇿", zone: "Pacific/Auckland" }
 ];
 
-const container = document.getElementById("clockContainer");
+const container = document.getElementById("container");
+let favs = JSON.parse(localStorage.getItem("fav")) || [];
 
-function createClocks() {
+/* Render */
+function render() {
   container.innerHTML = "";
-  cities.forEach(city => {
+
+  const sorted = [...countries].sort((a,b)=>{
+    if(favs.includes(a.zone)) return -1;
+    if(favs.includes(b.zone)) return 1;
+    return 0;
+  });
+
+  sorted.forEach(c => {
     const div = document.createElement("div");
     div.className = "clock";
-    div.setAttribute("data-name", city.name.toLowerCase());
+    div.setAttribute("data-name", c.name.toLowerCase());
 
     div.innerHTML = `
-      <div class="city">${city.name}</div>
-      <div class="time" id="${city.zone}">--:--:--</div>
-      <div class="date" id="date-${city.zone}"></div>
+      <div class="indicator" id="icon-${c.zone}"></div>
+
+      <div>
+        <div class="city">${c.name}</div>
+        <div class="time" id="${c.zone}">--</div>
+        <div class="date" id="date-${c.zone}"></div>
+        <div class="utc" id="utc-${c.zone}"></div>
+      </div>
+
+      <div class="bottom">
+        <span id="label-${c.zone}"></span>
+        <button class="fav-btn ${favs.includes(c.zone) ? 'fav-on':'fav-off'}"
+          onclick="toggleFav('${c.zone}')">
+          ${favs.includes(c.zone) ? '★ Saved' : '☆ Save'}
+        </button>
+      </div>
     `;
 
     container.appendChild(div);
   });
 }
 
-function updateClocks() {
-  cities.forEach(city => {
-    const now = new Date();
+/* Update */
+function update() {
+  const now = new Date();
 
-    const time = now.toLocaleTimeString("en-US", {
-      timeZone: city.zone,
-      hour12: true
-    });
+  countries.forEach(c => {
+    const local = new Date(now.toLocaleString("en-US", { timeZone: c.zone }));
+    const hour = local.getHours();
+    const isDay = hour >= 6 && hour < 18;
 
-    const date = now.toLocaleDateString("en-US", {
-      timeZone: city.zone,
-      weekday: "short",
-      day: "numeric",
-      month: "short"
-    });
+    document.getElementById(c.zone).innerHTML =
+      local.toLocaleTimeString() + `<span class="pulse"></span>`;
 
-    document.getElementById(city.zone).textContent = time;
-    document.getElementById("date-" + city.zone).textContent = date;
+    document.getElementById("date-" + c.zone).textContent =
+      local.toDateString();
+
+    document.getElementById("icon-" + c.zone).textContent =
+      isDay ? "☀️" : "🌙";
+
+    const offset = -local.getTimezoneOffset()/60;
+    document.getElementById("utc-" + c.zone).textContent =
+      "UTC " + (offset>=0?"+":"") + offset;
+
+    const card = document.getElementById(c.zone).closest(".clock");
+    card.classList.remove("day-bg","night-bg");
+    card.classList.add(isDay ? "day-bg" : "night-bg");
   });
 }
 
-/* Search filter */
-document.getElementById("searchInput").addEventListener("input", function () {
-  const value = this.value.toLowerCase();
-  const clocks = document.querySelectorAll(".clock");
+/* Fav */
+function toggleFav(zone){
+  if(favs.includes(zone)){
+    favs = favs.filter(z=>z!==zone);
+  } else {
+    favs.push(zone);
+  }
+  localStorage.setItem("fav", JSON.stringify(favs));
+  render();
+}
 
-  clocks.forEach(clock => {
-    const name = clock.getAttribute("data-name");
-    clock.style.display = name.includes(value) ? "block" : "none";
+/* Search */
+document.getElementById("search").addEventListener("input", e=>{
+  const val = e.target.value.toLowerCase();
+  document.querySelectorAll(".clock").forEach(c=>{
+    c.style.display = c.dataset.name.includes(val) ? "block":"none";
   });
 });
 
-createClocks();
-setInterval(updateClocks, 1000);
-updateClocks();
+/* Theme */
+function toggleTheme(){
+  document.body.classList.toggle("light");
+}
+
+render();
+setInterval(update,1000);
+update();
 </script>
 
 </body>
